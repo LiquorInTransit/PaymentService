@@ -1,4 +1,4 @@
-package com.gazorpazorp.SAMPLE_APPLICATION;
+package com.gazorpazorp.PaymentService;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
