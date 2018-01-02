@@ -110,7 +110,8 @@ public class PaymentService {
 	}
 	
 	private HttpStatus determineHttpStatus(ChargeOutcome outcome) {
-		if (outcome.getReason().isEmpty())
+		System.out.println(outcome.getReason());
+		if ("".equals(outcome.getReason()) || outcome.getReason()==null)
 			return HttpStatus.OK;
 		switch (outcome.getReason()) {
 		case "expired_card":
