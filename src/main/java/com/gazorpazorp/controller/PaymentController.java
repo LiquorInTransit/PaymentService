@@ -2,19 +2,21 @@ package com.gazorpazorp.controller;
 
 import java.util.Optional;
 
-import javax.servlet.http.HttpServletResponse;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gazorpazorp.service.PaymentService;
+import com.stripe.exception.APIConnectionException;
+import com.stripe.exception.APIException;
+import com.stripe.exception.AuthenticationException;
+import com.stripe.exception.CardException;
+import com.stripe.exception.InvalidRequestException;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -31,5 +33,18 @@ public class PaymentController {
 				.orElse(new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR));
 	}
 	
+	@PostMapping("/testPayment")
+	public Integer test	() throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
+		return Optional.ofNullable(paymentService.test())
+				.orElse(HttpStatus.INTERNAL_SERVER_ERROR.value());
+	}
+	
+	@PostMapping("/processPayment")
+	@PreAuthorize("#oauth2.hasScope('system')")
+	public ResponseEntity processPayment (@RequestParam String customerId, @RequestParam Long orderId, @RequestParam Integer amount) {
+		return Optional.ofNullable(paymentService.processPayment(customerId, orderId, amount))
+				.map(e -> new ResponseEntity(e))
+				.orElse(new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR));
+	}
 	
 }
