@@ -15,7 +15,7 @@ import com.stripe.net.RequestOptions;
 
 @Service
 public class PaymentService {
-	@Value("stripe.key")
+	@Value("${stripe.key}")
 	String apiKey;
 	
 	@Autowired
