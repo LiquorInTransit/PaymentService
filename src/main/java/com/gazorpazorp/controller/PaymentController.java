@@ -33,16 +33,12 @@ public class PaymentController {
 				.orElse(new ResponseEntity<String>(HttpStatus.INTERNAL_SERVER_ERROR));
 	}
 	
-	@PostMapping("/testPayment")
-	public Integer test	() throws AuthenticationException, InvalidRequestException, APIConnectionException, CardException, APIException {
-		return Optional.ofNullable(paymentService.test())
-				.orElse(HttpStatus.INTERNAL_SERVER_ERROR.value());
-	}
+	
 	
 	@PostMapping("/processPayment")
 	@PreAuthorize("#oauth2.hasScope('system')")
-	public ResponseEntity processPayment (@RequestParam String customerId, @RequestParam Long orderId, @RequestParam Integer amount) {
-		return Optional.ofNullable(paymentService.processPayment(customerId, orderId, amount))
+	public ResponseEntity processPayment (@RequestParam String customerId, @RequestParam String driverId, @RequestParam Long orderId, @RequestParam Integer amount) {
+		return Optional.ofNullable(paymentService.processPayment(customerId, driverId, orderId, amount))
 				.map(e -> new ResponseEntity(e))
 				.orElse(new ResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR));
 	}

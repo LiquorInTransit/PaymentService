@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.gazorpazorp.client.AccountClient;
+import com.stripe.Stripe;
 import com.stripe.exception.APIConnectionException;
 import com.stripe.exception.APIException;
 import com.stripe.exception.AuthenticationException;
@@ -55,39 +56,13 @@ public class PaymentService {
 		
 	}
 	
-	public Integer test() {
-		System.out.println("API KEY: "+secretKey);
+	public HttpStatus processPayment (String customerId, String driverId, Long orderId, Integer amount) {
 		RequestOptions reqopt = (new RequestOptions.RequestOptionsBuilder())
 				.setApiKey(secretKey)
 				.build();
 		
-		String id = accountClient.getCustomer().getStripeId();
-		
-		com.stripe.model.Customer cust;
-		try {
-			cust = com.stripe.model.Customer.retrieve(id, reqopt);
-			Map<String, Object> params = new HashMap<>();
-			params.put("amount", 1000);
-			params.put("currency", "cad");
-			params.put("description", "Example charge");
-			params.put("customer", cust.getId());
-			params.put("source", cust.getDefaultSource());
-			Map<String, String> initialMetadata = new HashMap<String, String>();
-			initialMetadata.put("order_id", "6735");
-			params.put("metadata", initialMetadata);
-			Charge charge = Charge.create(params, reqopt);
-			return HttpStatus.OK.value();
-		} catch (AuthenticationException | InvalidRequestException | APIConnectionException | CardException
-				| APIException e) {
-			e.printStackTrace();
-			return null;
-		}	
-	}
-	
-	public HttpStatus processPayment (String customerId, Long orderId, Integer amount) {
-		RequestOptions reqopt = (new RequestOptions.RequestOptionsBuilder())
-				.setApiKey(secretKey)
-				.build();
+		Stripe.apiKey=secretKey;
+
 		com.stripe.model.Customer cust;
 		try {
 			cust = com.stripe.model.Customer.retrieve(customerId, reqopt);
@@ -96,18 +71,53 @@ public class PaymentService {
 			params.put("currency", "cad");
 			params.put("description", "Example charge");
 			params.put("customer", cust.getId());
-			params.put("source", cust.getDefaultSource());
+			String source = cust.getDefaultSource();
+			if (source == null)
+				return HttpStatus.BAD_REQUEST;
+			params.put("source", source);
+			params.put("destination", driverId);
+			params.put("application_fee", 500);
+			params.put("capture", "false");
 			Map<String, String> initialMetadata = new HashMap<String, String>();
-			initialMetadata.put("order_id", String.valueOf(orderId));
+			initialMetadata.put("order_id", "6735");
 			params.put("metadata", initialMetadata);
 			Charge charge = Charge.create(params, reqopt);
-			return determineHttpStatus(charge.getOutcome());
-		} catch (AuthenticationException | InvalidRequestException | APIConnectionException | CardException
-				| APIException e) {
+			if (determineHttpStatus(charge.getOutcome())==HttpStatus.OK) {
+				Charge capped = Charge.retrieve(charge.getId()).capture();
+				return determineHttpStatus(capped.getOutcome());
+			} else {
+				return determineHttpStatus(charge.getOutcome());
+			}
+		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
-		}	
+		}
 	}
+	
+//	public HttpStatus processPayment (String customerId, Long orderId, Integer amount) {
+//		RequestOptions reqopt = (new RequestOptions.RequestOptionsBuilder())
+//				.setApiKey(secretKey)
+//				.build();
+//		com.stripe.model.Customer cust;
+//		try {
+//			cust = com.stripe.model.Customer.retrieve(customerId, reqopt);
+//			Map<String, Object> params = new HashMap<>();
+//			params.put("amount", amount);
+//			params.put("currency", "cad");
+//			params.put("description", "Example charge");
+//			params.put("customer", cust.getId());
+//			params.put("source", cust.getDefaultSource());
+//			Map<String, String> initialMetadata = new HashMap<String, String>();
+//			initialMetadata.put("order_id", String.valueOf(orderId));
+//			params.put("metadata", initialMetadata);
+//			Charge charge = Charge.create(params, reqopt);
+//			return determineHttpStatus(charge.getOutcome());
+//		} catch (AuthenticationException | InvalidRequestException | APIConnectionException | CardException
+//				| APIException e) {
+//			e.printStackTrace();
+//			return null;
+//		}	
+//	}
 	
 	private HttpStatus determineHttpStatus(ChargeOutcome outcome) {
 		System.out.println(outcome.getReason());
