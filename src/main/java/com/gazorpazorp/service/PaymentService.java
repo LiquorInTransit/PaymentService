@@ -76,7 +76,7 @@ public class PaymentService {
 				return HttpStatus.BAD_REQUEST;
 			params.put("source", source);
 			params.put("destination", driverId);
-			params.put("application_fee", 400);
+			params.put("application_fee", 400+(int)(amount*.029));
 			params.put("capture", "false");
 			Map<String, String> initialMetadata = new HashMap<String, String>();
 			initialMetadata.put("order_id", "6735");
